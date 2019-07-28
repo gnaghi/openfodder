@@ -33,12 +33,24 @@
 #include <cassert>
 #include <map>
 
+#ifdef __SWITCH__
+#include <SDL2/SDL.h>
+#else
 #include <SDL.h>
+#endif
 #ifndef EMSCRIPTEN
+#ifdef __SWITCH__
+#include <SDL2/SDL_mixer.h>
+#else
 #include <SDL_mixer.h>
+#endif
 #else
 #include <emscripten.h>
+#ifdef __SWITCH__
+#include <SDL2/SDL_mixer.h>
+#else
 #include <SDL/SDL_mixer.h>
+#endif
 #endif
 
 #include "Types.hpp"

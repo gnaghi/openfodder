@@ -21,10 +21,17 @@
  */
 
 #include "stdafx.hpp"
+
+#ifndef __SWITCH__
 #include "gitver.hpp"
+#endif
 
 static std::string compiled = std::string(__DATE__) + " AT " + std::string(__TIME__);
+#ifdef __SWITCH__
+static std::string version = "SWITCH VERSION";
+#else
 static std::string version = "VERSION " + std::string(gitversion);
+#endif
 
 const size_t TEXTPOS_BUILD    = 250;
 const size_t TEXTPOS_TEAM     = 400;
