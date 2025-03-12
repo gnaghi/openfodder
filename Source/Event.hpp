@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ enum eEventType {
 	eEvent_MouseRightUp		= 7,
 	eEvent_MouseWheel		= 8,
 	eEvent_Quit				= 10,
+	eEvent_Focus			= 11,
 };
 
 class cEvent {
@@ -41,6 +42,8 @@ class cEvent {
 		unsigned int		mButtonCount;
 
 		cPosition			mPosition;
+		cPosition			mPositionRelative;
+		bool				mHasFocus;
 
 	public:
 							cEvent( const eEventType& pType = eEvent_None );

@@ -2,7 +2,7 @@
 *  Open Fodder
 *  ---------------
 *
-*  Copyright (C) 2008-2018 Open Fodder
+*  Copyright (C) 2008-2024 Open Fodder
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,18 @@ struct sTileType {
 	eTileTypes  mType;
 	std::string mName;
 	std::string mFullName;
+};
+
+struct sTileTrack {
+	uint16_t X;
+	uint16_t Y;
+	uint8_t Track;
+
+	sTileTrack(uint16_t pX,uint16_t pY, uint8_t pTrack) {
+		X = pX;
+		Y = pY;
+		Track = pTrack;
+	}
 };
 
 struct sStructureTile {

@@ -1,9 +1,9 @@
 # Open Fodder
 [![Build Status](https://api.travis-ci.com/OpenFodder/openfodder.svg?branch=master)](https://travis-ci.com/OpenFodder/openfodder)
 [![Build status](https://ci.appveyor.com/api/projects/status/7pc2r2qe4niv4848?svg=true)](https://ci.appveyor.com/project/segrax/openfodder)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FOpenFodder%2Fopenfodder.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FOpenFodder%2Fopenfodder?ref=badge_shield)
+
   
-[Discord](https://discord.gg/4mX2wFM)  
+Come for a chat over at our [Discord](https://discord.gg/4mX2wFM)  
 
 ![image](https://user-images.githubusercontent.com/1327406/49718991-f1bd6e00-fcaf-11e8-88e3-68136828c2d1.png)
 
@@ -73,6 +73,7 @@ Open Fodder supports six demos from the Amiga platform, and three retail release
       --rows 16                 Number of camera rows (default: 16)
   -w, --window                  Start in window mode
       --window-scale arg        Set the window scale (default: 0)
+      --integer-scaling         Set integer scaling (default: true)
       --cheats                  Enable cheat keys
 
       --max-sprite 45           Set the maximum sprites (default: 45)
@@ -112,6 +113,7 @@ Open Fodder supports six demos from the Amiga platform, and three retail release
 * F9:    Make current squad invincible (with --cheats enabled)
 * F10:   Complete current map (with --cheats enabled)
 * F11:   Toggle full screen
+* F12:   Lock cursor to window
 * +:     Increase window size
 * -:     Decrease window size  
 

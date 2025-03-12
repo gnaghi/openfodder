@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ public:
 	eTileTypes getTileType() const { return mParams.mTileType; }
 	eTileSub getTileSub() const { return mParams.mTileSub; }
 
-	int32 getArea() const { return mParams.mWidth * mParams.mHeight;  }
+	int32 getArea() const { return static_cast<int32>(mParams.mWidth * mParams.mHeight);  }
 	int32 getWidth() const { return static_cast<int32>(mParams.mWidth); }
 	int32 getHeight() const { return static_cast<int32>(mParams.mHeight); }
 

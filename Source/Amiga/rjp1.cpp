@@ -41,6 +41,9 @@ bool Rjp1::load(tSharedBuffer pSong, tSharedBuffer pInstruments ) {
     uint8* songData = pSong->data();
     uint8* instrumentsData = pInstruments->data();
 
+	if (!songData)
+		return false;
+
 	if ( readBEDWord(songData) == 'RJP1' && readBEDWord(songData + 4) == 'SMOD') {
 		songData += 8;
 
@@ -73,6 +76,8 @@ bool Rjp1::load(tSharedBuffer pSong, tSharedBuffer pInstruments ) {
 			case 5:
 			case 6:
 				// sequence data
+				break;
+			default:
 				break;
 			}
 		}
@@ -198,6 +203,8 @@ bool Rjp1::executeSfxSequenceOp(Rjp1Channel *channel, uint8 code, const uint8 *&
 	case 7:
 		loop = false;
 		break;
+	default:
+		break;
 	}
 	return loop;
 }
@@ -236,13 +243,13 @@ bool Rjp1::executeSongSequenceOp(Rjp1Channel *channel, uint8 code, const uint8 *
 		setRelease(channel);
 		loop = false;
 		break;
-	case 2:
+	case 2: // loc_A423A
 		channel->loopSeqCount = *p++;
 		break;
-	case 3:
+	case 3:	// loc_A4240
 		channel->loopSeq2Count = *p++;
 		break;
-	case 4:
+	case 4: // loc_A4246
 		code = *p++;
 		if (code != 0) {
             if (code >= _vars.instrumentsCount)
@@ -261,6 +268,8 @@ bool Rjp1::executeSongSequenceOp(Rjp1Channel *channel, uint8 code, const uint8 *
 		break;
 	case 7:
 		loop = false;
+		break;
+	default:
 		break;
 	}
 	return loop;
@@ -380,7 +389,7 @@ void Rjp1::modulateVolumeEnvelope(Rjp1Channel *channel) {
 	if (channel->envelopeMode) {
 		int16 es = channel->envelopeScale;
 		if (es) {
-			int8 m = channel->envelopeEnd1;
+			uint8 m = channel->envelopeEnd1;
 			if (m == 0) {
 				es = 0;
 			} else {
@@ -451,7 +460,7 @@ template<typename T> inline T CLIP(T v, T amin, T amax) {
 
 void Rjp1::setVolume(Rjp1Channel *channel) {
 	channel->volume = (channel->volume * channel->volumeScale) / 64;
-    //channel->volume = CLIP<uint8>(channel->volume, 0, 64);
+    channel->volume = CLIP<int16>(channel->volume, 0, 64);
 	setChannelVolume(channel - _channelsTable, (uint8) channel->volume);
 }
 

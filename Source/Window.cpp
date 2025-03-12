@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,8 +38,7 @@ cWindow::cWindow() {
 
 	mRenderer = 0;
 
-    mHasFocus = false;
-    mCursorGrabbed = false;
+    mHasFocus = true;
 	mResized = false;
 }
 
@@ -68,14 +67,26 @@ bool cWindow::InitWindow( const std::string& pWindowTitle ) {
 		return false;
 	}
 
-	mRenderer = SDL_CreateRenderer(mWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	size_t flags = SDL_RENDERER_ACCELERATED;
+
+	if (!g_Fodder->mParams->mUnitTesting || g_Fodder->mParams->mDemoRecord)
+		flags |= SDL_RENDERER_PRESENTVSYNC;
+
+	mRenderer = SDL_CreateRenderer(mWindow, -1, flags );
 	if (!mRenderer) {
         g_Debugger->Error("Failed to create rendered");
 		exit( 1 );
 		return false;
 	}
 
-	SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, 0 );
+    if (g_Fodder->mParams->mIntegerScaling || mWindowMode) {
+		SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "nearest" );
+    }
+    else {
+		SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "linear" );
+    }
+
+	SDL_SetHintWithPriority(SDL_HINT_MOUSE_RELATIVE_MODE_WARP, "1", SDL_HINT_OVERRIDE);
 
 	SetCursor();
 
@@ -88,8 +99,15 @@ bool cWindow::InitWindow( const std::string& pWindowTitle ) {
         ToggleFullscreen();
     }
 
+	if (!g_Fodder->mParams->mMouseAlternative || (g_Fodder->mParams->mMouseAlternative && g_Fodder->mParams->mMouseLocked))
+		SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	return true;
+}
+
+void cWindow::SetRelativeMouseMode(bool pEnable) {
+
+	SDL_SetRelativeMouseMode(pEnable == true ? SDL_TRUE : SDL_FALSE);
 }
 
 std::vector<cEvent>* cWindow::EventGet() {
@@ -97,32 +115,14 @@ std::vector<cEvent>* cWindow::EventGet() {
 }
 
 bool cWindow::Cycle() {
-    //cPosition Mouse;
 
     EventCheck();
 
-    // Update the mouse position over the window
-    /*for (auto& Event : mEvents) {
-        switch (Event.mType) {
-        default:
-            break;
-        case eEvent_MouseLeftDown:
-        case eEvent_MouseRightDown:
-        case eEvent_MouseLeftUp:
-        case eEvent_MouseRightUp:
-        case eEvent_MouseMove:
-            Mouse = Event.mPosition;
-            break;
-        }
-    }*/
-
-    // TODO: Move Cursor logic here
 
     return true;
 }
 
 void cWindow::EventCheck() {
-
 	SDL_Event SysEvent;
 	
 	while (SDL_PollEvent(&SysEvent)) {
@@ -134,10 +134,14 @@ void cWindow::EventCheck() {
 
 			switch (SysEvent.window.event) {
 			case SDL_WINDOWEVENT_FOCUS_LOST:
+				Event.mType = eEvent_Focus;
+				Event.mHasFocus = false;
 				mHasFocus = false;
 				break;
 
 			case SDL_WINDOWEVENT_FOCUS_GAINED:
+				Event.mType = eEvent_Focus;
+				Event.mHasFocus = true;
 				mHasFocus = true;
 				break;
 			}
@@ -197,8 +201,16 @@ void cWindow::EventCheck() {
 			break;
 
 		case SDL_MOUSEMOTION:
+			if (SysEvent.motion.xrel < -100 || 
+				SysEvent.motion.yrel < -100 || 
+				SysEvent.motion.xrel > 100 || 
+				SysEvent.motion.yrel > 100) {
+				break;
+			}
+
 			Event.mType = eEvent_MouseMove;
 			Event.mPosition = cPosition(SysEvent.motion.x, SysEvent.motion.y);
+			Event.mPositionRelative = cPosition(SysEvent.motion.xrel, SysEvent.motion.yrel);
 			break;
 
 		case SDL_MOUSEWHEEL:
@@ -262,8 +274,6 @@ void cWindow::EventCheck() {
 		if ( Event.mType != eEvent_None )
 			mEvents.push_back( Event );
 	}
-
-    SDL_GetGlobalMouseState(&mMouseGlobal.mX, &mMouseGlobal.mY);
 }
 
 void cWindow::CalculateWindowSize() {
@@ -360,8 +370,14 @@ void cWindow::RenderAt( cSurface* pImage ) {
 	Src.x = (int) 16;
 	Src.y = (int) 16;
 
-	Dest.w = GetWindowSize().mWidth;
-	Dest.h = GetWindowSize().mHeight;
+	if (g_Fodder->mParams->mIntegerScaling || mWindowMode) {
+		Dest.w = GetWindowSize().mWidth;
+		Dest.h = GetWindowSize().mHeight;
+	}
+	else {
+		SDL_GetWindowSize(mWindow, NULL, &Dest.h);
+		Dest.w = Dest.h*(float)(4.0/3.0);
+	}
 
 	if (mWindowMode) {
 		Dest.x = 0;
@@ -399,7 +415,6 @@ void cWindow::RenderShrunk( cSurface* pImage ) {
 		Dest.x = (current.w - Dest.w) / 2;
 		Dest.y = (current.h - Dest.h) / 2;
 	}
-	pImage->draw();
 
 	SDL_RenderCopy( mRenderer, pImage->GetTexture(), &Src, &Dest);
 }
@@ -414,12 +429,7 @@ bool cWindow::isFullscreen() const {
 }
 
 bool cWindow::isMouseInside() const {
-    const cPosition MouseGlobalPos = GetMousePosition();
-    const cPosition WindowPos = GetWindowPosition();
-    const cDimension WindowSize = GetWindowSize();
-
-    return (MouseGlobalPos.mX >= WindowPos.mX && MouseGlobalPos.mX < WindowPos.mX + WindowSize.getWidth() &&
-            MouseGlobalPos.mY >= WindowPos.mY && MouseGlobalPos.mY < WindowPos.mY + WindowSize.getHeight());
+	return mWindow == SDL_GetMouseFocus();
 }
 
 bool cWindow::isResized() const {
@@ -430,8 +440,8 @@ bool cWindow::isResized() const {
  * Is either mouse button currently pressed
  */
 bool cWindow::isMouseButtonPressed_Global() const {
-    return  (SDL_GetGlobalMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) ||
-            (SDL_GetGlobalMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT));
+    return  (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT)) ||
+            (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_RIGHT));
 }
 
 /**
@@ -461,18 +471,6 @@ void cWindow::ToggleFullscreen() {
 
 void cWindow::ClearResized() {
 	mResized = false;
-}
-
-void cWindow::SetMouseWindowPosition( const cPosition& pPosition ) {
-
-	SDL_WarpMouseInWindow( mWindow, pPosition.getX(), pPosition.getY() );
-}
-
-cPosition cWindow::GetMousePosition( const bool pRelative ) const {
-    if(!pRelative)
-        return mMouseGlobal;
-
-    return (mMouseGlobal - GetWindowPosition());
 }
 
 void cWindow::SetMousePosition(const cPosition& pPosition) {
@@ -546,13 +544,6 @@ int32 cWindow::GetWindowWidth() const {
 
 int32 cWindow::GetWindowHeight() const {
 	return mOriginalResolution.mHeight * mScaler;
-}
-
-bool cWindow::HasFocus() {
-    if (SDL_GetWindowFlags(mWindow) & SDL_WINDOW_MOUSE_FOCUS)
-        return true;
-
-    return false;
 }
 
 cDimension cWindow::GetScale() const {

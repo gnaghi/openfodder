@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,11 +59,15 @@ void cSound_AudioCallback(void *userdata, Uint8 *stream, int len) {
 
 cSound_Amiga::cSound_Amiga() {
 	
+	mVal = 0;
 	mLock = SDL_CreateMutex();
+
+	mPlayingTrack = -1;
+	mPlayingSong = -1;
 
 	mAudioSpec = 0;
 	mCurrentMusic = 0;
-
+	mCurrentSfx.resize(5);
 	devicePrepare();
 }
 
@@ -71,10 +75,12 @@ cSound_Amiga::~cSound_Amiga() {
 
 	Stop();
 
-	delete mAudioSpec;
-
+	SDL_Delay(100);
 	SDL_CloseAudioDevice(mVal);
 	SDL_DestroyMutex(mLock);
+	SDL_Delay(100);
+
+	delete mAudioSpec;
 }
 
 void cSound_Amiga::audioBufferFill( short *pBuffer, int pBufferSize ) {
@@ -87,6 +93,8 @@ void cSound_Amiga::audioBufferFill( short *pBuffer, int pBufferSize ) {
 
 		if (mCurrentSfx.size()) {
 			for ( auto SfxIT : mCurrentSfx) {
+				if (!SfxIT)
+					continue;
 
 				if (!SfxIT->endOfStream())
 					SfxIT->readBuffer( pBuffer, pBufferSize / 2 );
@@ -94,12 +102,10 @@ void cSound_Amiga::audioBufferFill( short *pBuffer, int pBufferSize ) {
 
 			for ( auto SfxIT = mCurrentSfx.begin(); SfxIT != mCurrentSfx.end();) {
 
-				if ((*SfxIT)->endOfStream()) {
+				if ((*SfxIT) && (*SfxIT)->endOfStream()) {
 					delete (*SfxIT);
 
-					mCurrentSfx.erase( SfxIT );
-					SfxIT = mCurrentSfx.begin();
-					continue;
+					*SfxIT = 0;
 				}
 
 				++SfxIT;
@@ -144,7 +150,7 @@ bool cSound_Amiga::devicePrepare() {
 	return true;
 }
 
-int16 cSound_Amiga::Track_Load( sSound* pSound, int16 pTrack ) {
+int16 cSound_Amiga::Track_Load( sSound* pSound, int16 pTrack, int16 pSong = -1) {
 	int16 Number = 0;
     const sSoundData *Tracks = CANNON_BASED(Tracks1, Tracks2);
     const sSoundData *Track = 0;
@@ -161,7 +167,7 @@ int16 cSound_Amiga::Track_Load( sSound* pSound, int16 pTrack ) {
 	// Mission
 	if (pTrack >= 0x32) {
 		Track = &Tracks[2 + (pTrack - 0x32)];
-		Number = 1;
+		Number = 2;
 	}
 
 	// Jon 
@@ -171,24 +177,34 @@ int16 cSound_Amiga::Track_Load( sSound* pSound, int16 pTrack ) {
 	}
 
 	if (pSound->mTrack != Track) {
-
-		pSound->mCurrentMusicSongData = g_Resource->fileGet( Track->mSongData );
-		pSound->mCurrentMusicInstrumentData = g_Resource->fileGet( Track->mInstrumentData );
+		if (Track) {
+			pSound->mCurrentMusicSongData = g_Resource->fileGet(Track->mSongData);
+			pSound->mCurrentMusicInstrumentData = g_Resource->fileGet(Track->mInstrumentData);
+		}
 		pSound->mTrack = Track;
 	}
+
+	if (pSong >= 0)
+		Number = pSong;
 
 	return Number;
 }
 
-void cSound_Amiga::Sound_Play( int16 pTileset, int16 pSoundEffect, int16 pVolume ) {
+void cSound_Amiga::Sound_Play( int16 pTileset, int16 pSoundEffect, int16 pVolume, int16 pIndex) {
 
 	Track_Load( &mSound_Sfx, pTileset + 0x32 );
 
 	if (SDL_LockMutex( mLock ) == 0) {
 		if (mSound_Sfx.mCurrentMusicSongData && mSound_Sfx.mCurrentMusicInstrumentData) {
 			Audio::AudioStream* Sfx = Audio::makeRjp1Stream( mSound_Sfx.mCurrentMusicSongData, mSound_Sfx.mCurrentMusicInstrumentData, -pSoundEffect );
-			Sfx->mVolume = pVolume;
-			mCurrentSfx.push_back( Sfx );
+			if (Sfx) {
+				Sfx->mVolume = pVolume;
+				if (mCurrentSfx[pIndex]) {
+					delete mCurrentSfx[pIndex];
+					mCurrentSfx[pIndex] = 0;
+				}
+				mCurrentSfx[pIndex] = Sfx;
+			}
 		}
 
 		SDL_UnlockMutex( mLock );
@@ -197,11 +213,16 @@ void cSound_Amiga::Sound_Play( int16 pTileset, int16 pSoundEffect, int16 pVolume
     SDL_PauseAudioDevice(mVal, 0);
 }
 
-void cSound_Amiga::Music_Play( int16 pTrack ) {
+void cSound_Amiga::Music_Play( int16 pTrack, int16 pSong) {
 	
-	int16 Number = Track_Load( &mSound_Music, pTrack );
+	if (mPlayingTrack == pTrack && mPlayingSong == pSong)
+		return;
+
+	int16 Number = Track_Load( &mSound_Music, pTrack, pSong);
 		
 	Music_Stop();
+	mPlayingTrack = pTrack;
+	mPlayingSong = pSong;
 
     if (mSound_Music.mCurrentMusicSongData && mSound_Music.mCurrentMusicInstrumentData) {
         if (mSound_Music.mCurrentMusicSongData->size() && mSound_Music.mCurrentMusicInstrumentData->size())
@@ -212,6 +233,8 @@ void cSound_Amiga::Music_Play( int16 pTrack ) {
 }
 
 void cSound_Amiga::Music_Stop() {
+	mPlayingTrack = -1;
+	mPlayingSong = -1;
 
 	if (SDL_LockMutex( mLock ) == 0) {
 
@@ -222,16 +245,42 @@ void cSound_Amiga::Music_Stop() {
 	}
 }
 
+void cSound_Amiga::Music_SetVolume(int16 pChannel, int16 pVolume) {
+	if (!mCurrentMusic)
+		return;
+
+	if (pChannel == -1) {
+		for (int Ch = 0; Ch < mCurrentMusic->NUM_VOICES; ++Ch) {
+			mCurrentMusic->volumeMax[Ch] = pVolume;
+		}
+		return;
+	}
+
+	mCurrentMusic->volumeMax[pChannel] = pVolume;
+}
+
+int16 cSound_Amiga::Music_GetVolume(int16 pChannel) {
+	if (!mCurrentMusic)
+		return 0;
+
+	if (pChannel == -1) {
+		pChannel = 0;
+	}
+
+	return mCurrentMusic->volumeMax[pChannel];
+}
+
 void cSound_Amiga::Sound_Stop() {
 	
 	if (SDL_LockMutex( mLock ) == 0) {
 
-		for (auto SfxIT : mCurrentSfx) {
+		for (auto& SfxIT : mCurrentSfx) {
 
 			delete SfxIT;
+			SfxIT = 0;
 		}
 
-		mCurrentSfx.clear();
+		//mCurrentSfx.clear();
 
 		SDL_UnlockMutex(mLock);
 	}

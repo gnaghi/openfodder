@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,13 @@ class cGraphics_PC : public cGraphics {
 	uint16          mMission_Intro_DrawX;
 	uint16          mMission_Intro_DrawY;
 
+	int32 Heli_VeryBack;
+	int32 Heli_Back;
+	int32 Heli_middle;
+	int32 Heli_Front;
+	int32 Heli_TextPos;
+	int32 Heli_TextPosBottom;
+
 	public:
 	virtual				~cGraphics_PC();
 
@@ -77,7 +84,7 @@ class cGraphics_PC : public cGraphics {
 	virtual void		Video_Draw_16(const uint8* RowPallete = 0);
 	virtual void		Video_Draw_8(cSurface *pTarget = 0, const uint8* RowPallete = 0);
 
-	virtual void		Sidebar_Copy_To_Surface( int16 pStartY );
+	virtual void		Sidebar_Copy_To_Surface( int16 pStartY, cSurface* pSurface = 0);
 	virtual void		Sidebar_Copy_Sprite_To_ScreenBufPtr( int16 pSpriteType, size_t pX, size_t pY );
 	virtual void		Sidebar_Copy_ScreenBuffer( uint16 pRow, int16 pRows, int16 pCopyToScreen, uint32*& Data20 );
 
@@ -88,11 +95,12 @@ class cGraphics_PC : public cGraphics {
 	virtual void		Mission_Intro_Load_Resources(const eTileTypes pTileset);
 	virtual void		Mission_Intro_DrawHelicopter( uint16 );
 
-	virtual void		Mission_Intro_Play( const bool pShowHelicopter,const eTileTypes pTileset);
-	void				Mission_Intro( const std::vector<cPosition>& pPositions, const bool pShowHelicopter );
+	void				Mission_Intro_Play( const bool pShowHelicopter, const eTileTypes pTileset, const std::string pTop, const std::string pBottom);
 
 	void				Mission_Intro_Render_2(tSharedBuffer pDs, int16 pCx);
 	void				Mission_Intro_Render_1(tSharedBuffer pDs, int16 pCx);
+
+	void				Briefing_Helicopter_Background_Unk_1();
 
 	void				sub_15B98(tSharedBuffer pDs, int16 pCx);
 

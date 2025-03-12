@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1152,67 +1152,47 @@ const std::vector<sGravePosition> mGravePositions = {
 
 int16 cFodder::Recruit_Show() {
 
-    if (mCustom_Mode != eCustomMode_Map) {
-        Map_Load();
-        Map_Load_Sprites();
+    Map_Load();
+    Map_Load_Sprites();
 
-        Phase_Soldiers_Count();
-        mGame_Data.Soldier_Sort();
-        Phase_Soldiers_Prepare(true);
-        Phase_Soldiers_AttachToSprites();
-
-    }
-    else {
-        if (mVersionCurrent->mName == "Random Map") {
-
-			CreateRandom();
-			mGame_Data.mMission_Recruitment = 0;
-        }
-        else {
-            Custom_ShowMapSelection();
-        }
-
-        if (mCustom_Mode == eCustomMode_None)
-            return -1;
-    }
+    Phase_Soldiers_Count();
+    mGame_Data.Soldier_Sort();
+    Phase_Soldiers_Prepare(true);
+    Phase_Soldiers_AttachToSprites();
 
     WindowTitleSet(false);
 
-    // Single Map does not have a recruit screen
-    if (mCustom_Mode != eCustomMode_Map) {
+	if (!mStartParams->mDisableSound)
+		mSound->Music_Play(0);
 
-		if (!mStartParams->mDisableSound)
-			mSound->Music_Play(0);
+    // Retail / Custom set show the Recruitment Hill
+    if (mVersionCurrent->isRetail() || mVersionCurrent->isPCFormat() || mVersionCurrent->isRandom() || mCustom_Mode == eCustomMode_Set) {
 
-        // Retail / Custom set show the Recruitment Hill
-        if (mVersionCurrent->isRetail() || mVersionCurrent->isPCFormat() || mCustom_Mode == eCustomMode_Set) {
+        // Recruit Screen
+        if (Recruit_Loop())
+            return -1;
 
-            // Recruit Screen
-            if (Recruit_Loop())
-                return -1;
+        Recruit_CheckLoadSaveButtons();
 
-            Recruit_CheckLoadSaveButtons();
-
-            // Did we just load/save a game?
-            if (mRecruit_Button_Load_Pressed || mRecruit_Button_Save_Pressed) {
-                mRecruit_Mission_Restarting = true;
-                mGame_Data.mMission_Recruitment = -1;
-                mPhase_Aborted = true;
-                return -3;
-            }
+        // Did we just load/save a game?
+        if (mRecruit_Button_Load_Pressed || mRecruit_Button_Save_Pressed) {
+            mRecruit_Mission_Restarting = true;
+            mGame_Data.mMission_Recruitment = -1;
+            mPhase_Aborted = true;
+            return -3;
         }
-        else {
+    }
+    else {
 
-            // Amiga demos have a menu
-            if (mVersionCurrent->mPlatform == ePlatform::Amiga) {
+        // Amiga demos have a menu
+        if (mVersionCurrent->mPlatform == ePlatform::Amiga) {
 
-                // But not custom games
-                if (mCustom_Mode == eCustomMode_None) {
+            // But not custom games
+            if (mCustom_Mode == eCustomMode_None) {
 
-                    if (!mVersionCurrent->isAmigaTheOne()) {
-                        if (Demo_Amiga_ShowMenu())
-                            return -1;
-                    }
+                if (!mVersionCurrent->isAmigaTheOne()) {
+                    if (Demo_Amiga_ShowMenu())
+                        return -1;
                 }
             }
         }
@@ -1227,7 +1207,7 @@ int16 cFodder::Recruit_Show() {
         Map_Load();
 
         // Show the intro for the briefing screen
-        Mission_Intro_Play( false, mMapLoaded->getTileType() );
+        Mission_Intro_Play(false, mMapLoaded->getTileType());
     }
 
     mGraphics->Load_pStuff();
@@ -1302,7 +1282,33 @@ bool cFodder::Recruit_Loop() {
 
     mMouse_Exit_Loop = false;
 
+    mSurfaceRecruit->copyFrom(mSurface);
+    mInterruptCallback = [this]() {
+        
+        int16 DataC = PLATFORM_BASED(0xB6, 0xBE);
+        GUI_Draw_Frame_8(0x22, mRecruit_Truck_Frame, 0x31, DataC);
+
+        Recruit_Draw_Soldiers();
+        mGraphics->Sidebar_Copy_To_Surface(0x18);
+
+        if (mVersionCurrent->isPC())
+            mGraphics->Recruit_Draw_HomeAway();
+
+        if (mMouseCursor_Enabled)
+            Mouse_DrawCursor();
+
+        if (mSurface->isPaletteAdjusting())
+            mSurface->palette_FadeTowardNew();
+
+        mSurfaceRecruit->copyFrom(mSurface);
+    };
+
     for (;; ) {
+        {
+            std::lock_guard<std::mutex> lock(mSurfaceMtx);
+            Recruit_Update_Actors();
+        }
+
         if (mMouse_Exit_Loop) {
             mMouse_Exit_Loop = false;
 
@@ -1313,10 +1319,8 @@ bool cFodder::Recruit_Loop() {
         if (mPhase_Aborted)
             break;
 
-        Recruit_Cycle();
-
-        Video_SurfaceRender();
-        Cycle_End();
+        Video_Sleep(mSurfaceRecruit, false, false);  
+        Video_Sleep(mSurfaceRecruit, false, false);
     }
 
     mRecruit_Screen_Active = false;
@@ -1327,11 +1331,16 @@ bool cFodder::Recruit_Loop() {
     mSurface->paletteNew_SetToBlack();
 
     while (mSurface->isPaletteAdjusting()) {
-        Recruit_Cycle();
+        {
+            std::lock_guard<std::mutex> lock(mSurfaceMtx);
+            Recruit_Update_Actors();
+        }
 
-        Video_SurfaceRender();
-        Cycle_End();
+        Video_Sleep(mSurfaceRecruit, false, false);
+        Video_Sleep(mSurfaceRecruit, false, false);
     }
+
+    mInterruptCallback = nullptr;
 
     return mPhase_Aborted;
 }
@@ -1792,16 +1801,7 @@ loc_17686:;
 
 }
 
-void cFodder::Recruit_Update_Soldiers() {
-
-    if (mRecruit_Truck_Animation_Play) {
-        sub_175C0();
-    }
-    else {
-        Recruit_Frame_Check();
-        Recruit_Position_Troops();
-    }
-
+void cFodder::Recruit_Draw_Soldiers() {
     sRecruit_Screen_Pos* Data20 = mRecruit_Screen_Positions;
     sRecruit_Screen_Pos* dword_3B1C7;
 
@@ -1870,6 +1870,19 @@ void cFodder::Recruit_Update_Soldiers() {
             GUI_Draw_Frame_8(Data0, Data4, Data8, DataC);
         }
     }
+}
+
+void cFodder::Recruit_Update_Soldiers() {
+
+    if (mRecruit_Truck_Animation_Play) {
+        sub_175C0();
+    }
+    else {
+        Recruit_Frame_Check();
+        Recruit_Position_Troops();
+    }
+
+    //Recruit_Draw_Soldiers();
 }
 
 void cFodder::Recruit_Prepare_Anims() {
@@ -2017,7 +2030,7 @@ loc_179B2:;
 void cFodder::Recruit_Update_Truck() {
     int16 DataC = PLATFORM_BASED(0xB6, 0xBE);
 
-    GUI_Draw_Frame_8(0x22, mRecruit_Truck_Frame, 0x31, DataC);
+   // GUI_Draw_Frame_8(0x22, mRecruit_Truck_Frame, 0x31, DataC);
 
     // If no troop has reached the truck, don't do animation
     if (!mRecruit_Truck_Animation_Play)
@@ -2070,21 +2083,6 @@ void cFodder::Recruit_Copy_Sprites() {
             word_3B1A3 += 0x10;
         }
     }
-}
-
-void cFodder::Recruit_Cycle() {
-    Mouse_Inputs_Get();
-
-    Recruit_Update_Actors();
-    mGraphics->Sidebar_Copy_To_Surface(0x18);
-
-    if (mVersionCurrent->isPC())
-        mGraphics->Recruit_Draw_HomeAway();
-
-    Mouse_DrawCursor();
-
-    if (mSurface->isPaletteAdjusting())
-        mSurface->palette_FadeTowardNew();
 }
 
 bool cFodder::Recruit_Check_Buttons_SaveLoad() {

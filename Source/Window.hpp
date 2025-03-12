@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -31,13 +31,11 @@ class cWindow {
 		cDimension			mOriginalResolution;
 
 		cDimension			mScreenSize;
-        cPosition           mMouseGlobal;
 
 		uint8				mScaler, mScalerPrevious;
 
 		bool				mWindowMode;
         bool                mHasFocus;
-        bool                mCursorGrabbed;
 		bool				mResized;
 
 	protected:
@@ -77,9 +75,7 @@ class cWindow {
 
 		void				SetCursor();
 
-        cPosition           GetMousePosition(const bool pRelative = false) const;
         void				SetMousePosition(const cPosition& pPosition);
-		void				SetMouseWindowPosition( const cPosition& pPosition );
 
 		void				SetScreenSize( const cDimension& pDimension );
 		void				SetOriginalRes( const cDimension& pDimension );
@@ -99,10 +95,12 @@ class cWindow {
 		cDimension	        GetWindowSize() const;
 		cDimension	        GetScreenSize() const { return mScreenSize; }
 		bool			    GetWindowMode() const { return mWindowMode; }
-        bool                HasFocus();
         bool                hasFocusEvent() const { return mHasFocus; }
-        bool                GetMouseGrabbed() const { return mCursorGrabbed; }
+		void				clearFocus() { mHasFocus = false; }
         cDimension          GetScale() const;
+
+		void				SetRelativeMouseMode(bool pEnable);
+
 };
 
 class cWindowNull : public cWindow {

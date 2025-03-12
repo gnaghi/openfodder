@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -46,6 +46,16 @@ struct sStruct0_Amiga {
 
 class cGraphics_Amiga : public cGraphics {
 protected:
+	int32 Heli_VeryBack;
+	int32 Heli_Back;
+	int32 Heli_middle;
+	int32 Heli_Front;
+	int32 Heli_TextPos;
+	int32 Heli_TextPosBottom;
+
+	int16 word_3292;
+	int16 word_32D2;
+	int16 word_3316;
 
 	tSharedBuffer 		mBlkData;
 
@@ -97,18 +107,20 @@ protected:
 
 	virtual void		SetActiveSpriteSheet(eGFX_Types pSpriteType );
 
-	virtual void		Sidebar_Copy_To_Surface( int16 pStartY );
+	virtual void		Sidebar_Copy_To_Surface( int16 pStartY, cSurface* pSurface = 0);
 	virtual void		Sidebar_Copy_Sprite_To_ScreenBufPtr( int16 pSpriteType, size_t pX, size_t pY );
 	virtual void		Sidebar_Copy_ScreenBuffer( uint16 pRow, int16 pRows, int16 pCopyToScreen, uint32*& pBuffer);
 
 	virtual void		Recruit_Sprite_Draw(int16 pRows, int16 pColumns, int16 pData8, int16 pData10, int16 pData14, int16 pDataC, uint8* pData20 );
 
 	virtual bool		Sprite_OnScreen_Check(  );
-	virtual bool		Sprite_OnScreen_Check( bool p16bit = false );
+	virtual bool		Sprite_OnScreen_Check(bool p16bit = false);
 
-	virtual void		Mission_Intro_Play( const bool pShowHelicopter, const eTileTypes pTileset);
+	virtual void		Mission_Intro_Play( const bool pShowHelicopter, const eTileTypes pTileset, const std::string pTop, const std::string pBottom);
 	virtual void		Mission_Intro_Load_Resources(const eTileTypes pTileset);
 	virtual void		Mission_Intro_DrawHelicopter( uint16 pID );
+	virtual void		Briefing_Helicopter_Background_Unk();
+	virtual void		Briefing_Helicopter_Background_Unk_1();
 
 	virtual void		Recruit_Draw_Hill();
 	virtual void		Recruit_Draw_HomeAway();

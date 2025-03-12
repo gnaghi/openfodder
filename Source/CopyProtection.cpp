@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -109,7 +109,16 @@ const sCopyProtection mCopyProtection_Values[] = {
 void cFodder::CopyProtection() {
 
     // Only DOS CD had copy protection
+    if (!mVersionCurrent->isCannonFodder1())
+        return;
+
+    if (!mVersionCurrent->isRetail())
+        return;
+
     if (!mVersionCurrent->isPC())
+        return;
+
+    if (!mParams->mCopyProtection)
         return;
 
     mGraphics->SetActiveSpriteSheet(eGFX_Types::eGFX_RECRUIT);
@@ -162,10 +171,9 @@ void cFodder::CopyProtection() {
                 mShow = !mShow;
 
             if (mShow)
-                GUI_Draw_Frame_8(0x0F, 0x00, mGUI_Temp_X + mGUI_Temp_Width, 0xA0);
+                GUI_Draw_Frame_8(0x0F, 0x00, (mGUI_Temp_X + mGUI_Temp_Width), 0xA0);
 
-            Video_SurfaceRender();
-            Cycle_End();
+            Video_Sleep();
         }
 
         Image_FadeOut();

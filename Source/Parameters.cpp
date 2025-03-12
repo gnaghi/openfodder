@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ std::string sFodderParameters::ToJson() {
 	Save["mSkipService"] = mSkipService;
 
 	Save["mWindowMode"] = mWindowMode;
+	Save["mIntegerScaling"] = mIntegerScaling;
 	Save["mRandom"] = mRandom;
 	Save["mDefaultPlatform"] = mDefaultPlatform;
 	Save["mCampaignName"] = mCampaignName;
@@ -105,6 +106,10 @@ bool sFodderParameters::FromJson(const std::string& pJson) {
 	else
 		mCheatsEnabled = false;
 
+	if (LoadedData.count("mIntegerScaling") > 0) {
+		mIntegerScaling = LoadedData["mIntegerScaling"];
+	}
+
 	return true;
 }
 
@@ -128,11 +133,12 @@ void sFodderParameters::PrepareOptions() {
 		("alternate-mouse", "Play with non-original mouse behaviour", cxxopts::value<bool>()->default_value("false"))
 		("w,window", "Start in window mode", cxxopts::value<bool>()->default_value("false"))
 		("window-scale", "Set the window scale", cxxopts::value<std::uint32_t>()->default_value("0"))
+		("integer-scaling", "Use integer scaling", cxxopts::value<bool>()->default_value("true"))
 
 		("cheats", "Enable cheat keys", cxxopts::value<bool>()->default_value("false"))
 		("max-sprite", "Set the maximum sprites", cxxopts::value<std::uint32_t>()->default_value("45"), "45")
 		("max-spawn", "Set the maximum spawn", cxxopts::value<std::uint32_t>()->default_value("10"), "10")
-		("sleep-delta", "Set the engine speed", cxxopts::value<std::uint32_t>()->default_value("2"), "2")
+		("sleep-delta", "Set the engine speed (20 = 50Hz)", cxxopts::value<std::uint32_t>()->default_value("20"), "20")
 
 		("demo-record", "Record Demo", cxxopts::value<std::string>()->default_value(""), "\"Demo File\"")
 		("demo-record-all", "Record Demo")
@@ -255,6 +261,9 @@ bool sFodderParameters::ProcessCLI(int argc, char *argv[]) {
 		if(result.count("window-scale"))
 			mWindowScale = result["window-scale"].as<uint32>();
 
+		if (result.count("integer-scaling"))
+			mIntegerScaling = result["integer-scaling"].as<bool>();
+
 		mRandom = result["random"].as<bool>();
 		if (result["random-save"].count()) {
 
@@ -265,10 +274,10 @@ bool sFodderParameters::ProcessCLI(int argc, char *argv[]) {
 
 		mDisableSound = result["nosound"].as<bool>();
 		mPlayground = result["playground"].as<bool>();
-
 		mSleepDelta = result["sleep-delta"].as<uint32_t>();
 
-		mCheatsEnabled = result["cheats"].as<bool>();
+		if (result.count("cheats"))
+			mCheatsEnabled = result["cheats"].as<bool>();
 
 		if(result.count("rows"))
 			mWindowRows = result["rows"].as<std::uint32_t>();
@@ -303,7 +312,8 @@ bool sFodderParameters::ProcessCLI(int argc, char *argv[]) {
 		mCheatsEnabled = true;
 #endif
 
-		if (mMissionNumber || mPhaseNumber) {
+		// Skip intro and recruit screen if a campaign and mission/phase is provided
+		if (mCampaignName.length() && (mMissionNumber || mPhaseNumber)) {
 			mSkipRecruit = true;
 			mSkipIntro = true;
 		}
@@ -366,6 +376,12 @@ bool sFodderParameters::ProcessINI() {
 				mWindowScale = ini.get("scale", 0);
 			}
 
+			if (ini.get("integer", "true") == "true")
+				mIntegerScaling = true;
+			else {
+				mIntegerScaling = false;
+			}
+
 			if (ini.get("columns", "0") == "0")
 				mWindowColumns = 0;
 			else {
@@ -380,6 +396,12 @@ bool sFodderParameters::ProcessINI() {
 
 			if (ini.get("alternate-mouse", "false") == "true")
 				mMouseAlternative = true;
+
+			if (ini.get("mouse-locked", "false") == "true")
+				mMouseLocked = true;
+
+			if (ini.get("copyprotection", "false") == "true")
+				mCopyProtection = true;
 		}
 	}
 

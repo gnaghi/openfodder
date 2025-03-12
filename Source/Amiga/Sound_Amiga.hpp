@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -60,11 +60,14 @@ public:
 
 	void				audioBufferFill( short *pBuffer, int pBufferSize );
 
-	int16				Track_Load( sSound* pSound, int16 pTrack );
-	void				Sound_Play( int16 pTileset, int16 pSoundEffect, int16 pVolume );
+	int16				Track_Load( sSound* pSound, int16 pTrack, int16 pSong );
+	void				Sound_Play( int16 pTileset, int16 pSoundEffect, int16 pVolume, int16 pIndex);
 
-	void				Music_Play( int16 pTrack );
+	void				Music_Play( int16 pTrack, int16 pSong);
     void				Music_Stop();
+	void				Music_SetVolume(int16 pChannel, int16 pVolume);
+	int16				Music_GetVolume(int16 pChannel);
+
 	void				Sound_Stop();
         
     

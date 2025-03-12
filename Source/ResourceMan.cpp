@@ -2,7 +2,7 @@
 *  Open Fodder
 *  ---------------
 *
-*  Copyright (C) 2008-2018 Open Fodder
+*  Copyright (C) 2008-2024 Open Fodder
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -66,18 +66,19 @@ void cResourceMan::addDefaultDirs() {
 	if (path.size())
 		addBaseDir(path + "/Documents/");
 #else
-	path = std::getenv("XDG_DATA_DIRS");
-	if (path.size()) {
+	char* path1 = std::getenv("XDG_DATA_DIRS");
+	if (path1) {
 		std::stringstream ss;
-		ss << path;
+		ss << path1;
 		while (ss.good()) {
 			std::string substr;
 			std::getline(ss, substr, ':');
 			addBaseDir(substr);
 		}
 	}
-	path = std::getenv("HOME");
-	if (path.size()) {
+	path1 = std::getenv("HOME");
+	if (path1) {
+		path = path1;
 		addBaseDir(path + "/.local/share/");
 	}
 	addBaseDir("/usr/local/share/");
@@ -150,9 +151,9 @@ void cResourceMan::findVersions() {
 
 					// See if we match
 					if (baseFileLower == FileLower) {
-						std::string MD5 = FileMD5(base + File.mName);
+						std::string MD5 = FileMD5(base + baseFile);
 
-						ReleaseFiles.insert(std::make_pair(FileLower, base + File.mName));
+						ReleaseFiles.insert(std::make_pair(FileLower, base + baseFile));
 
 						if (MD5 != File.mChecksum) {
 							if (MD5.length() == 0) {
@@ -433,7 +434,7 @@ std::string cResourceMan::GetTestPath(const sGameVersion* pVersion, const std::s
 
 std::string cResourceMan::GetAboutFile() const {
 	for (auto& ValidPath : mValidPaths) {
-		auto basepath = ValidPath + "about.bmp";
+		auto basepath = ValidPath + "about.png";
 		if (FileExists(basepath))
 			return basepath;
 	}

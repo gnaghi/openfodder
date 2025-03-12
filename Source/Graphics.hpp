@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -175,12 +175,12 @@ public:
 	virtual void		SetImageOriginal();
 	virtual bool		Sprite_OnScreen_Check() = 0;
 
-	virtual void		Sidebar_Copy_To_Surface( int16 pStartY = 0 ) = 0;
+	virtual void		Sidebar_Copy_To_Surface( int16 pStartY = 0, cSurface *pSurface = 0 ) = 0;
 	virtual void		Sidebar_Copy_Sprite_To_ScreenBufPtr( int16 pSpriteType, size_t pX, size_t pY ) = 0;
 	virtual void		Sidebar_Copy_ScreenBuffer( uint16 pRow, int16 pRows, int16 pCopyToScreen, uint32*& pBuffer) = 0;
 	virtual void		Recruit_Sprite_Draw( int16 pColumns, int16 pRows, int16 pData8, int16 pData10, int16 pData14, int16 pDataC, uint8* pGraphics ) = 0;
 
-	virtual void		Mission_Intro_Play( const bool pShowHelicopter, const eTileTypes pTileset) = 0;
+	virtual void		Mission_Intro_Play( const bool pShowHelicopter, const eTileTypes pTileset, const std::string pTop, const std::string pBottom) = 0;
 	virtual void		Mission_Intro_Load_Resources(const eTileTypes pTileset) = 0;
 	virtual void		Mission_Intro_DrawHelicopter( uint16 pID ) = 0;
 

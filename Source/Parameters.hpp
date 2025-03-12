@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,7 +36,10 @@ public:
 	bool mSkipService;          // Skip mission debrief
 
 	bool mMouseAlternative;		// Use the alternate mouse behaviour
+	bool mMouseLocked;			// Mouse is locked to window
+
 	bool mWindowMode;           // Start in a window
+	bool mIntegerScaling;       // Use integer scaling in fullscreen mode
 	size_t mWindowScale;		// Start with window scaled at
 	size_t mWindowRows;
 	size_t mWindowColumns;
@@ -76,6 +79,7 @@ public:
 	size_t mSpawnEnemyMax;
 
 	bool mShowHelp;
+	bool mCopyProtection;
 
 	sFodderParameters() {
 		clear();
@@ -93,7 +97,7 @@ public:
 		mPlayground = false;
 		mDisableSound = false;
 		mDisableVideo = false;
-		mSleepDelta = 2;
+		mSleepDelta = 20;
 
 		mAppVeyor = false;
 		mSkipService = false;
@@ -104,7 +108,10 @@ public:
 		mMissionNumber = 0;
 		mPhaseNumber = 0;
 		mMouseAlternative = false;
+		mMouseLocked = false;
+
 		mWindowMode = false;
+		mIntegerScaling = true;
 		mWindowScale = 0;
 
 		mWindowRows = 0;
@@ -125,6 +132,8 @@ public:
 		mSinglePhase = false;
 		mSpritesMax = 45;
 		mSpawnEnemyMax = 10;
+
+		mCopyProtection = false;
 	}
 
 protected:
@@ -143,4 +152,5 @@ public:
 	}
 
 	bool isOriginalSpriteMax() const { return mSpritesMax == 45; }
+	int32 getSpritesMax() const { return (int32) mSpritesMax; }
 };

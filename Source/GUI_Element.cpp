@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -1243,9 +1243,6 @@ void cFodder::GUI_Select_File_Loop(bool pShowCursor) {
         if (mShow)
             GUI_Draw_Frame_8(PLATFORM_BASED(0x0F, 0x18), 0x00, mGUI_Temp_X + mGUI_Temp_Width, 0x50);
 
-        Mouse_Inputs_Get();
-        Mouse_DrawCursor();
-
         if (mPhase_Aborted)
             GUI_Button_Load_Exit();
 
@@ -1258,8 +1255,9 @@ void cFodder::GUI_Select_File_Loop(bool pShowCursor) {
         if (mGUI_Select_File_String_Input_Callback)
             (this->*mGUI_Select_File_String_Input_Callback)(0x50);
 
-        Video_SurfaceRender();
-        Cycle_End();
+        Mouse_DrawCursor();
+
+        Video_Sleep();
 
     } while (mGUI_SaveLoadAction <= 0);
 

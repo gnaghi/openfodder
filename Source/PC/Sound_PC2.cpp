@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -123,7 +123,19 @@ cSound_PC2::cSound_PC2() {
 
 cSound_PC2::~cSound_PC2() {
 	
+	Mix_FreeMusic(mMusicPlaying);
+	SDL_Delay(100);
+
 	Mix_CloseAudio();
+	SDL_CloseAudio();
+
+	SDL_Delay(100);
+	for (std::vector<sChunkPlaying>::iterator ChannelIT = mMixerChunks.begin(); ChannelIT != mMixerChunks.end(); ++ChannelIT) {
+		Mix_FreeChunk(ChannelIT->mCurrentChunk);
+	}
+	for (auto SoundEffect : mSoundEffects) {
+		Mix_FreeChunk(SoundEffect);
+	}
 }
 
 void cSound_PC2::Sound_Voc_Load() {
@@ -177,7 +189,7 @@ void cSound_PC2::MixerChannelFinished( int32 pChannel ) {
     mMixerChunks.erase(end, mMixerChunks.end());
 }
 
-void cSound_PC2::Sound_Play( int16 pTileset, int16 pSoundEffect, int16 pVolume) {
+void cSound_PC2::Sound_Play( int16 pTileset, int16 pSoundEffect, int16 pVolume, int16 pIndex) {
     Mix_Chunk* chunk = 0;
 
     if (pSoundEffect >= 65)
@@ -214,15 +226,21 @@ void cSound_PC2::Music_PlayFile( const char* pFilename ) {
 }
 
 void cSound_PC2::Music_Stop() {
-	
+    mPlayingTrack = -1;
+
 	if (mSound == false)
 		return;
 
 	Mix_FadeOutMusic(500);
 }
 
-void cSound_PC2::Music_Play( int16 pTrack ) {
+void cSound_PC2::Music_Play( int16 pTrack, int16 pSong) {
     std::string filename;
+
+    if (mPlayingTrack == pTrack)
+        return;
+
+    mPlayingTrack = pTrack;
 
     switch (pTrack) {
         case 0:

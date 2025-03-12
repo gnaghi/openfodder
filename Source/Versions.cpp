@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -112,10 +112,10 @@ const sGameVersion KnownGameVersions[] = {
 	{ "Single Map", eGame::CF2, ePlatform::Amiga,   eRelease::Custom,	"Custom", { } },
 	{ "Single Map", eGame::CF2, ePlatform::PC,      eRelease::Custom,	"Custom", { } },
 
-	{ "Random Map", eGame::CF1, ePlatform::Amiga,   eRelease::Custom,	"Custom", { } },
-	{ "Random Map", eGame::CF1, ePlatform::PC,      eRelease::Custom,	"Custom", { } },
-	{ "Random Map", eGame::CF2, ePlatform::Amiga,   eRelease::Custom,	"Custom", { } },
-	{ "Random Map", eGame::CF2, ePlatform::PC,      eRelease::Custom,	"Custom", { } },
+	{ "Random Map", eGame::CF1, ePlatform::Amiga,   eRelease::eRandom,	"Custom", { } },
+	{ "Random Map", eGame::CF1, ePlatform::PC,      eRelease::eRandom,	"Custom", { } },
+	{ "Random Map", eGame::CF2, ePlatform::Amiga,   eRelease::eRandom,	"Custom", { } },
+	{ "Random Map", eGame::CF2, ePlatform::PC,      eRelease::eRandom,	"Custom", { } },
 
 };
 

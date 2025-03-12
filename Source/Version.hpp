@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -36,7 +36,8 @@ enum eRelease {
 	AmigaNotVeryFestive,
 	AmigaAlienLevels,
 
-	Custom
+	Custom,
+	eRandom
 };
 
 enum eGame {
@@ -117,7 +118,11 @@ struct sVersion {
 	}
 
 	bool isCustom() const {
-		return mRelease == eRelease::Custom;
+		return mRelease == eRelease::Custom || isRandom();
+	}
+
+	bool isRandom() const {
+		return mRelease == eRelease::eRandom;
 	}
 
 	bool isRetail() const {
@@ -158,6 +163,10 @@ struct sVersion {
 
 	bool isPC() const {
 		return mPlatform == ePlatform::PC;
+	}
+
+	bool isSingle() const {
+		return mName == "Single Map";
 	}
 
 	/**

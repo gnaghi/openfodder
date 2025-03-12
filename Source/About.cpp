@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -55,10 +55,11 @@ cAbout::cAbout() {
         { TEXTPOS_TEAM + 30,  "ROBERT CROSSFIELD" },
 
         { TEXTPOS_TEAM + 80, "ENGINE" },
-        { TEXTPOS_TEAM + 90, "ALESSANDRO PETRALIA" },
+        { TEXTPOS_TEAM + 90,  "ROBERT CROSSFIELD" },
+        { TEXTPOS_TEAM + 100, "ALESSANDRO PETRALIA" },
 
-		{ TEXTPOS_TEAM + 110, "SCRIPTING" },
-		{ TEXTPOS_TEAM + 120, "STARWINDZ" },
+		{ TEXTPOS_TEAM + 120, "SCRIPTING" },
+		{ TEXTPOS_TEAM + 130, "STARWINDZ" },
 
 
         { TEXTPOS_THANKS + 0 , "THANKS TO" },
@@ -70,10 +71,11 @@ cAbout::cAbout() {
         { TEXTPOS_THANKS + 60, "SCUMMVM"},
 
         { TEXTPOS_POWERED + 0,  "POWERED BY"},
-        { TEXTPOS_POWERED + 10, "CPP14"},
+        { TEXTPOS_POWERED + 10, "CPP17"},
         { TEXTPOS_POWERED + 20, "SDL2"},
 		{ TEXTPOS_POWERED + 30, "DUKTAPE"},
 		{ TEXTPOS_POWERED + 40, "DUKGLUE"},
+        { TEXTPOS_POWERED + 50, "IDA"},
 
         // Just for fun: loc_2B48E
         { 1100, "PUSH CX"},
@@ -91,7 +93,8 @@ cAbout::cAbout() {
     };
 
     mSurface = new cSurface(0, 0);
-    mSurface->LoadBitmap(g_ResourceMan->GetAboutFile());
+    mSurface->LoadPng(g_ResourceMan->GetAboutFile());
+
     g_Fodder->mGraphics->PaletteSet();
     g_Fodder->Phase_EngineReset();
     g_Fodder->mMouseSpriteNew = eSprite_pStuff_Mouse_Target;
@@ -123,7 +126,9 @@ bool cAbout::Cycle() {
 
     g_Fodder->mGraphics->SetActiveSpriteSheet(eGFX_BRIEFING);
     g_Fodder->Service_Draw_List();
-    g_Fodder->Service_ScrollUp_DrawList();
+
+    if (g_Fodder->mInterruptTick % 2 == 0)
+        g_Fodder->Service_ScrollUp_DrawList();
 
     {
         g_Fodder->mString_GapCharID = 0x25;
@@ -133,9 +138,6 @@ bool cAbout::Cycle() {
         g_Fodder->GUI_Button_Draw_Small("BACK", 0xB3 + PLATFORM_BASED(0, 25));
         g_Fodder->GUI_Button_Setup_Small(&cFodder::GUI_Button_Load_Exit);
     }
-
-    g_Fodder->Mouse_Inputs_Get();
-    g_Fodder->Mouse_DrawCursor();
 
     if (g_Fodder->mPhase_Aborted)
         g_Fodder->GUI_Button_Load_Exit();
@@ -151,9 +153,13 @@ bool cAbout::Cycle() {
 
     }
 
+    g_Fodder->Mouse_DrawCursor();
+
     g_Fodder->mSurface->draw();
-    g_Window->RenderShrunk(mSurface);
-    
+    g_Fodder->Video_Sleep(mSurface, true);
+    g_Fodder->mWindow->RenderAt(g_Fodder->mSurface);
+    //g_Fodder->Video_SurfaceRender(false, false, 0, false);
+
     if (g_Fodder->mGUI_SaveLoadAction == 1 && !g_Fodder->mSurface->isPaletteAdjusting())
         return false;
 

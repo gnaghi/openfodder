@@ -2,7 +2,7 @@
 *  Open Fodder
 *  ---------------
 *
-*  Copyright (C) 2008-2018 Open Fodder
+*  Copyright (C) 2008-2024 Open Fodder
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -125,19 +125,28 @@ struct sGameRecorded {
 
     std::multimap< uint64, cEvent > mEvents;
     std::map< uint64, cStateRecorded > mState;
+    std::vector< uint64 > mVideoTicks;
+    std::mutex  mLockMtx;
+
 
     sGameRecorded();
+    sGameRecorded(const sGameRecorded& other);
+    sGameRecorded& operator=(const sGameRecorded& other);
+
     void AddEvent(const uint64 pTicks, const cEvent& pEvent);
     std::vector<cEvent> GetEvents(const uint64 pTicks);
 
     void AddState(const uint64 pTicks, const cStateRecorded& pEvent);
     cStateRecorded* GetState(const uint64 pTicks);
 
+    void AddVideoTick(const uint64 pTick);
+    bool GetVideoTick(const uint64 pTick);
+
     void DisableTicks();
     void EnableTicks();
     void Tick();
 
-    uint64 GetTotalTicks() const;
+    uint64 GetTotalTicks();
     void removeFrom(const uint64 pTicks);
 
     void clear();

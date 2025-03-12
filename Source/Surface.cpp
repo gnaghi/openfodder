@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@
  */
 
 #include "stdafx.hpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "Utils/stb_image.h"
 
 cSurface::cSurface( size_t pWidth, size_t pHeight ) {
     mIsLoadedImage = false;
@@ -201,44 +204,79 @@ inline void cSurface::paletteSDLColorSet( size_t id, cPalette *pPalette ) {
 /**
  * Draw the Surface Buffer to SDLSurface, using the surface palette
  */
-void cSurface::draw() {
+void cSurface::draw(const int16 pSkipX, const int16 pSkipY) {
+	if (mIsLoadedImage)
+		return;
 
-    if (mIsLoadedImage)
-        return;
+	const uint8_t* bufferCurrent = mSurfaceBuffer;
+	const uint8_t* const bufferEnd = mSurfaceBuffer + mSurfaceBufferSize;
+	uint32_t* bufferTarget = reinterpret_cast<uint32_t*>(mSDLSurface->pixels);
+	const int width = mSDLSurface->w, height = mSDLSurface->h;
 
-	const uint8 *bufferCurrent = mSurfaceBuffer;
-	const uint8 *bufferCurrentMax = (mSurfaceBuffer + mSurfaceBufferSize);
-
-	uint32 *bufferTarget = (uint32*)mSDLSurface->pixels;
-	uint32 *bufferTargetMax = (uint32*) (((uint8*) mSDLSurface->pixels) + (mSDLSurface->h * mSDLSurface->pitch));
-	
 	clearSDLSurface(0);
 
-	// Loop until we reach the destination end
-	while( bufferTarget < bufferTargetMax ) {
-			
-		// Break out if we pass the source end
-		if( bufferCurrent >= bufferCurrentMax )
-			break;
+	// Skip 'skipY' rows of pixels
+	bufferCurrent += width * pSkipY;
+	bufferTarget += width * pSkipY;
 
-		// Non zero value to draw
+	for (int y = pSkipY; y < height; ++y) {
+		// Skip first 'skipX' pixels
+		bufferCurrent += pSkipX;
+		bufferTarget += pSkipX;
+
+		// Process remaining pixels
+		for (int x = pSkipX; x < width; ++x) {
+			if (bufferCurrent >= bufferEnd) break;
+
+			uint8_t currentPixel = *bufferCurrent++;
+			if (currentPixel) {
+				*bufferTarget = (currentPixel < g_MaxColors) ? mPaletteSDL[currentPixel] : 0;
+			}
+
+			++bufferTarget;
+		}
+	}
+
+	if (mTexture) {
+		SDL_UpdateTexture(mTexture, NULL, mSDLSurface->pixels, mSDLSurface->pitch);
+	}
+}
+
+void cSurface::copyFrom(const cSurface* pFrom) {
+	
+	memcpy(mSurfaceBuffer, pFrom->mSurfaceBuffer, mSurfaceBufferSize);
+
+	for (size_t cx = 0; cx < g_MaxColors; ++cx) {
+		mPalette[cx] = pFrom->mPalette[cx];
+		mPaletteNew[cx] = pFrom->mPaletteNew[cx];
+		mPaletteSDL[cx] = pFrom->mPaletteSDL[cx];
+	}
+}
+
+void cSurface::mergeFrom(const cSurface* pFrom) {
+	auto SourceSurface = pFrom->GetSurfaceBuffer();
+	auto SourceSize = pFrom->GetSurfaceBufferSize();
+
+	uint32* bufferTarget = (uint32*)mSurfaceBuffer;
+	uint32* bufferTargetMax = (uint32*)((uint8*)mSurfaceBuffer + mSurfaceBufferSize);
+
+	const uint32* bufferCurrent = ((uint32*)SourceSurface);
+	const uint32* bufferCurrentMax = (uint32*)(((uint8*)SourceSurface) + SourceSize);
+
+	while (bufferTarget < bufferTargetMax) {
+
 		if (*bufferCurrent) {
 
 			// Value in palette range?
-			if (*bufferCurrent < g_MaxColors)
-				*bufferTarget = mPaletteSDL[*bufferCurrent];
-			else
-				*bufferTarget = 0;
+			*bufferTarget = *bufferCurrent;
 		}
 
 		// Next Source/Destination
 		++bufferCurrent;
 		++bufferTarget;
 	}
-
-	if(mTexture)
-		SDL_UpdateTexture(mTexture, NULL, mSDLSurface->pixels, mSDLSurface->pitch);
 }
+
 
 /**
  * Merge another SDLsurface onto our rendered surface
@@ -283,11 +321,32 @@ void cSurface::clearBuffer(size_t pColor) {
 	clearSDLSurface();
 }
 
-bool cSurface::LoadBitmap(const std::string& pFile) {
-    auto Surface = SDL_LoadBMP(pFile.c_str());
+bool cSurface::LoadPng(const std::string& pFile) {
+    int32 width, height, bytesPerPixel;
+    void* data = stbi_load(pFile.c_str(), &width, &height, &bytesPerPixel, 0);
+
+    // Calculate pitch
+    int pitch;
+    pitch = width * bytesPerPixel;
+    pitch = (pitch + 3) & ~3;
+
+    // Setup relevance bitmask
+    uint32 Rmask, Gmask, Bmask, Amask;
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+    Rmask = 0x000000FF;
+    Gmask = 0x0000FF00;
+    Bmask = 0x00FF0000;
+    Amask = (bytesPerPixel == 4) ? 0xFF000000 : 0;
+#else
+    int s = (bytesPerPixel == 4) ? 0 : 8;
+    Rmask = 0xFF000000 >> s;
+    Gmask = 0x00FF0000 >> s;
+    Bmask = 0x0000FF00 >> s;
+    Amask = 0x000000FF >> s;
+#endif
+    auto Surface = SDL_CreateRGBSurfaceFrom(data, width, height, bytesPerPixel*8, pitch, Rmask, Gmask, Bmask, Amask);
     if (!Surface)
         return false;
-
     SDL_FreeSurface(mSDLSurface);
     mSDLSurface = Surface;
 
@@ -303,7 +362,7 @@ bool cSurface::LoadBitmap(const std::string& pFile) {
         SDL_SetTextureColorMod(mTexture, 0xFF, 0xFF, 0xFF);
     }
 
-    return mSDLSurface != 0;
+    return mSDLSurface != nullptr;
 }
 
 void cSurface::Save() {

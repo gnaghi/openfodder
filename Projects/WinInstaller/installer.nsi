@@ -43,7 +43,7 @@ SetCompressor lzma
   ; Welcome page
   !insertmacro MUI_PAGE_WELCOME
 
-  !insertmacro MUI_PAGE_LICENSE "..\..\gpl-3.0.txt"
+  !insertmacro MUI_PAGE_LICENSE "..\..\COPYING"
   ;!insertmacro MUI_PAGE_COMPONENTS
   !insertmacro MUI_PAGE_DIRECTORY
   
@@ -75,12 +75,12 @@ Section "Copy Files" drcreepInst
   
   File ".\openfodder.ini"
   File ".\packages\VC_redist.x86.exe"
-  File "..\..\gpl-3.0.txt"
+  File "..\..\COPYING*"
   File "..\..\Readme.md"
-  File "..\VS2017\Release\OpenFodder.exe"
-  File "..\VS2017\Release\SDL2.dll"
-  File "..\VS2017\Release\SDL2_mixer.dll"
-  File "..\VS2017\Release\libmodplug-1.dll"
+  File "..\VS2017\x86\Release\OpenFodder.exe"
+  File "..\VS2017\x86\Release\SDL2.dll"
+  File "..\VS2017\x86\Release\SDL2_mixer.dll"
+  File "..\VS2017\x86\Release\libmodplug-1.dll"
   
   Var /GLOBAL DataDest
   StrCpy $DataDest "$INSTDIR"
@@ -90,10 +90,12 @@ Section "Copy Files" drcreepInst
   CopyFilesLocal:
   
   SetOutPath "$DataDest"
+  File /r "..\..\Run\about.png"
   File /r "..\..\Run\Campaigns"
   File /r "..\..\Run\Data"
   File /r "..\..\Run\Saves"
-
+  File /r "..\..\Run\Scripts"
+  
   SetOutPath "$INSTDIR"
   
   ;Store installation folder
@@ -113,7 +115,7 @@ Section "Copy Files" drcreepInst
 
 	CreateShortCut "$DESKTOP\OpenFodder.lnk" "$INSTDIR\OpenFodder.exe"
 
-	MessageBox MB_YESNO|MB_ICONQUESTION "Install Microsoft Visual C++ 2017 64bit Redistributable Package?" IDNO NoRunVC
+	MessageBox MB_YESNO|MB_ICONQUESTION "Install Microsoft Visual C++ 2015-2022 32bit Redistributable Package?" IDNO NoRunVC
     Exec "$INSTDIR\VC_redist.x86.exe"
   NoRunVC:
   

@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,17 +38,22 @@ namespace dukglue {
 }
 
 void print(const std::string pString) {
-
+#ifdef DEBUG
 	g_Debugger->Notice(pString);
+#endif
 }
 
 void consoleLog(DukValue pValue) {
+#ifdef DEBUG
 	std::string json = duk_json_encode(pValue.context(), -1);
 	g_Debugger->Notice(json);
+#endif
 }
 
 void consoleClear() {
+#ifdef DEBUG
 	g_Debugger->ClearConsole();
+#endif
 }
 
 cScriptFileIO::cScriptFileIO(std::string pFilename, bool pRead) {
@@ -385,8 +390,7 @@ void cScriptingEngine::guiPrintString(const std::string& pText, const size_t pX,
 			g_Fodder->String_Print_Large(pText, pUnderline, pX, pY);
 	}
 
-	g_Fodder->Video_SurfaceRender(false);
-	g_Fodder->Cycle_End();
+	g_Fodder->Video_Sleep();
 	g_Fodder->mGraphics->SetActiveSpriteSheet(eGFX_IN_GAME);
 }
 
@@ -422,7 +426,7 @@ bool cScriptingEngine::scriptsLoadFolder(const std::string& pFolder) {
 		auto finalName = pFolder + scriptFile;
 		auto script = g_ResourceMan->FileReadStr(finalpath + scriptFile);
 		
-		if (scriptRun(script, finalName) == false) {
+		if (!script.size() || (scriptRun(script, finalName) == false)) {
 			g_Debugger->Error(finalpath + scriptFile + " Failed to execute");
 			return false;
 		}
@@ -465,7 +469,7 @@ bool cScriptingEngine::Run(const std::string& pScript) {
 	auto path = g_ResourceMan->GetScriptPath(pScript);
 	auto script = g_ResourceMan->FileReadStr(path);
 
-	if (scriptRun(script, pScript) == false) {
+	if (!script.size() || (scriptRun(script, pScript) == false)) {
 		g_Debugger->Error(path + " Failed to execute");
 		return false;
 	}

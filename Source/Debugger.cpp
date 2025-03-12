@@ -2,7 +2,7 @@
  *  Open Fodder
  *  ---------------
  *
- *  Copyright (C) 2008-2018 Open Fodder
+ *  Copyright (C) 2008-2024 Open Fodder
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,10 +35,10 @@ bool cDebugger::ConsoleOpen() {
 
 	if (Alloced)
 		return true;
-
+/*
 #ifdef _CONSOLE
     return true;
-#endif
+#endif*/
     if (g_Fodder->mParams->mAppVeyor)
         return true;
 
